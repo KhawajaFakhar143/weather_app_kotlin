@@ -17,15 +17,19 @@ import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import com.example.weatherapp.utils.Constants
 import com.example.weatherapp.R
+import com.example.weatherapp.models.WeatherResponse
+import com.example.weatherapp.network.WeatherService
 import com.google.android.gms.location.*
 import com.karumi.dexter.Dexter
 import com.karumi.dexter.MultiplePermissionsReport
 import com.karumi.dexter.PermissionToken
 import com.karumi.dexter.listener.PermissionRequest
 import com.karumi.dexter.listener.multi.MultiplePermissionsListener
+import retrofit2.*
+import retrofit2.converter.gson.GsonConverterFactory
 
 class MainActivity : AppCompatActivity() {
-    private var mFusedLocationClient : FusedLocationProviderClient? =null
+    private var mFusedLocationClient: FusedLocationProviderClient? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -77,24 +81,47 @@ class MainActivity : AppCompatActivity() {
                 .check()
 
         }
-        getLocationWeatherDetails()
     }
 
     override fun onResume() {
         super.onResume()
-     //   getLocationWeatherDetails()
+        //   getLocationWeatherDetails()
     }
 
 
-    override fun onContentChanged() {
-        super.onContentChanged()
-        getLocationWeatherDetails()
-    }
 
-    private fun getLocationWeatherDetails(){
-        if(Constants.isNetworkAvailable(this)){
-            Toast.makeText(this, "Connected", Toast.LENGTH_SHORT).show()
-        }else{
+
+    private fun getLocationWeatherDetails(lat: Double, lon: Double) {
+        if (Constants.isNetworkAvailable(this)) {
+            val retrofit = Retrofit.Builder().baseUrl(Constants.BASE_URL)
+                .addConverterFactory(GsonConverterFactory.create()).build()
+
+            val service = retrofit.create(WeatherService::class.java)
+            val listCall: Call<WeatherResponse> =
+                service.getWeather(lat, lon, Constants.METRIC_UNIT, Constants.APP_ID)
+            listCall.enqueue(object : Callback<WeatherResponse>{
+                override fun onResponse(
+                    call: Call<WeatherResponse>,
+                    response: Response<WeatherResponse>
+                ) {
+                    if(response.isSuccessful){
+                        val weatherList: WeatherResponse? = response.body()
+                        Log.i("API response success","${weatherList.toString()}")
+                    }else{
+                        when(response.code()){
+                            400 -> Log.e("ON RESPONSE", "ERROR 400")
+                            404 -> Log.e("ON RESPONSE", "ERROR 404")
+                            else -> Log.e("ON RESPONSE", "UNKNOWN ERROR OCCURRED")
+                        }
+                    }
+                }
+
+                override fun onFailure(call: Call<WeatherResponse>, t: Throwable) {
+                    Log.e("ON FAILURE",t.toString())
+                }
+
+            })
+        } else {
             Toast.makeText(this, "Not connected", Toast.LENGTH_SHORT).show()
         }
     }
@@ -167,6 +194,7 @@ class MainActivity : AppCompatActivity() {
 
             val longitude = mLastLocation.longitude
             Log.i("Current Longitude", "$longitude")
+            getLocationWeatherDetails(latitude, longitude)
         }
     }
 
