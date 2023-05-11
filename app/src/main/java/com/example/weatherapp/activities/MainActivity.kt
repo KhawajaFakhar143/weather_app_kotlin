@@ -15,6 +15,8 @@ import android.os.Bundle
 import android.os.Looper
 import android.provider.Settings
 import android.util.Log
+import android.view.Menu
+import android.view.MenuItem
 import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AlertDialog
@@ -97,8 +99,6 @@ class MainActivity : AppCompatActivity() {
     }
 
 
-
-
     private fun getLocationWeatherDetails(lat: Double, lon: Double) {
         if (Constants.isNetworkAvailable(this)) {
             val retrofit = Retrofit.Builder().baseUrl(Constants.BASE_URL)
@@ -108,18 +108,18 @@ class MainActivity : AppCompatActivity() {
             val listCall: Call<WeatherResponse> =
                 service.getWeather(lat, lon, Constants.METRIC_UNIT, Constants.APP_ID)
             showCustomProgressDialog()
-            listCall.enqueue(object : Callback<WeatherResponse>{
+            listCall.enqueue(object : Callback<WeatherResponse> {
                 @RequiresApi(Build.VERSION_CODES.N)
                 override fun onResponse(
                     call: Call<WeatherResponse>,
                     response: Response<WeatherResponse>
                 ) {
                     hideProgressDialog()
-                    if(response.isSuccessful){
+                    if (response.isSuccessful) {
                         val weatherList: WeatherResponse? = response.body()
                         setupUI(weatherList!!)
-                    }else{
-                        when(response.code()){
+                    } else {
+                        when (response.code()) {
                             400 -> Log.e("ON RESPONSE", "ERROR 400")
                             404 -> Log.e("ON RESPONSE", "ERROR 404")
                             else -> Log.e("ON RESPONSE", "UNKNOWN ERROR OCCURRED")
@@ -129,7 +129,7 @@ class MainActivity : AppCompatActivity() {
 
                 override fun onFailure(call: Call<WeatherResponse>, t: Throwable) {
                     hideProgressDialog()
-                    Log.e("ON FAILURE",t.toString())
+                    Log.e("ON FAILURE", t.toString())
                 }
 
             })
@@ -207,6 +207,7 @@ class MainActivity : AppCompatActivity() {
             getLocationWeatherDetails(latitude, longitude)
         }
     }
+
     /**
      * Method is used to show the Custom Progress Dialog.
      */
@@ -288,10 +289,27 @@ class MainActivity : AppCompatActivity() {
     private fun unixTime(timex: Long): String? {
         val date = Date(timex * 1000L)
         @SuppressLint("SimpleDateFormat") val sdf =
-            SimpleDateFormat("HH:mm:ss")
+            SimpleDateFormat("HH:mm")
         sdf.timeZone = TimeZone.getDefault()
         return sdf.format(date)
     }
-    // END
 
+    // END
+    override fun onCreateOptionsMenu(menu: Menu?): Boolean {
+        menuInflater.inflate(R.menu.menu_main, menu)
+        return super.onCreateOptionsMenu(menu)
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        when (item.itemId) {
+            R.id.action_refresh -> {
+                requestLocationData()
+                return true
+            }
+            else ->
+                return super.onOptionsItemSelected(item)
+
+        }
+
+    }
 }
