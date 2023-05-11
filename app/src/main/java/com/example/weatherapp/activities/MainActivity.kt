@@ -9,12 +9,14 @@ import android.content.Intent
 import android.location.Location
 import android.location.LocationManager
 import android.net.Uri
+import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.os.Looper
 import android.provider.Settings
 import android.util.Log
 import android.widget.Toast
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AlertDialog
 import com.example.weatherapp.utils.Constants
 import com.example.weatherapp.R
@@ -28,6 +30,10 @@ import com.karumi.dexter.listener.PermissionRequest
 import com.karumi.dexter.listener.multi.MultiplePermissionsListener
 import retrofit2.*
 import retrofit2.converter.gson.GsonConverterFactory
+import java.text.SimpleDateFormat
+import java.util.*
+import kotlinx.android.synthetic.main.activity_main.*
+
 
 class MainActivity : AppCompatActivity() {
     private var mFusedLocationClient: FusedLocationProviderClient? = null
@@ -103,6 +109,7 @@ class MainActivity : AppCompatActivity() {
                 service.getWeather(lat, lon, Constants.METRIC_UNIT, Constants.APP_ID)
             showCustomProgressDialog()
             listCall.enqueue(object : Callback<WeatherResponse>{
+                @RequiresApi(Build.VERSION_CODES.N)
                 override fun onResponse(
                     call: Call<WeatherResponse>,
                     response: Response<WeatherResponse>
@@ -110,7 +117,7 @@ class MainActivity : AppCompatActivity() {
                     hideProgressDialog()
                     if(response.isSuccessful){
                         val weatherList: WeatherResponse? = response.body()
-                        Log.i("API response success","${weatherList.toString()}")
+                        setupUI(weatherList!!)
                     }else{
                         when(response.code()){
                             400 -> Log.e("ON RESPONSE", "ERROR 400")
@@ -222,5 +229,69 @@ class MainActivity : AppCompatActivity() {
             mProgressDialog!!.dismiss()
         }
     }
+
+    @RequiresApi(Build.VERSION_CODES.N)
+    private fun setupUI(weatherList: WeatherResponse) {
+
+        // For loop to get the required data. And all are populated in the UI.
+        for (z in weatherList.weather.indices) {
+            Log.i("NAMEEEEEEEE", weatherList.weather[z].main)
+
+            tv_main.text = weatherList.weather[z].main
+            tv_main_description.text = weatherList.weather[z].description
+            tv_temp.text =
+                weatherList.main.temp.toString() + getUnit(application.resources.configuration.locales.toString())
+            tv_humidity.text = weatherList.main.humidity.toString() + " per cent"
+            tv_min.text = weatherList.main.temp_min.toString() + " min"
+            tv_max.text = weatherList.main.temp_max.toString() + " max"
+            tv_speed.text = weatherList.wind.speed.toString()
+            tv_name.text = weatherList.name
+            tv_country.text = weatherList.sys.country
+            tv_sunrise_time.text = unixTime(weatherList.sys.sunrise.toLong())
+            tv_sunset_time.text = unixTime(weatherList.sys.sunset.toLong())
+
+            // Here we update the main icon
+            when (weatherList.weather[z].icon) {
+                "01d" -> iv_main.setImageResource(R.drawable.sunny)
+                "02d" -> iv_main.setImageResource(R.drawable.cloud)
+                "03d" -> iv_main.setImageResource(R.drawable.cloud)
+                "04d" -> iv_main.setImageResource(R.drawable.cloud)
+                "04n" -> iv_main.setImageResource(R.drawable.cloud)
+                "10d" -> iv_main.setImageResource(R.drawable.rain)
+                "11d" -> iv_main.setImageResource(R.drawable.storm)
+                "13d" -> iv_main.setImageResource(R.drawable.snowflake)
+                "01n" -> iv_main.setImageResource(R.drawable.cloud)
+                "02n" -> iv_main.setImageResource(R.drawable.cloud)
+                "03n" -> iv_main.setImageResource(R.drawable.cloud)
+                "10n" -> iv_main.setImageResource(R.drawable.cloud)
+                "11n" -> iv_main.setImageResource(R.drawable.rain)
+                "13n" -> iv_main.setImageResource(R.drawable.snowflake)
+            }
+        }
+    }
+
+    /**
+     * Function is used to get the temperature unit value.
+     */
+    private fun getUnit(value: String): String? {
+        Log.i("unitttttt", value)
+        var value = "°C"
+        if ("US" == value || "LR" == value || "MM" == value) {
+            value = "°F"
+        }
+        return value
+    }
+
+    /**
+     * The function is used to get the formatted time based on the Format and the LOCALE we pass to it.
+     */
+    private fun unixTime(timex: Long): String? {
+        val date = Date(timex * 1000L)
+        @SuppressLint("SimpleDateFormat") val sdf =
+            SimpleDateFormat("HH:mm:ss")
+        sdf.timeZone = TimeZone.getDefault()
+        return sdf.format(date)
+    }
+    // END
 
 }
