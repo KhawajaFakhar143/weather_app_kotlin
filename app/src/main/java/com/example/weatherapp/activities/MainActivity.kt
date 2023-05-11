@@ -2,6 +2,7 @@ package com.example.weatherapp.activities
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.app.Dialog
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
@@ -30,6 +31,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 
 class MainActivity : AppCompatActivity() {
     private var mFusedLocationClient: FusedLocationProviderClient? = null
+    private var mProgressDialog: Dialog? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -99,11 +101,13 @@ class MainActivity : AppCompatActivity() {
             val service = retrofit.create(WeatherService::class.java)
             val listCall: Call<WeatherResponse> =
                 service.getWeather(lat, lon, Constants.METRIC_UNIT, Constants.APP_ID)
+            showCustomProgressDialog()
             listCall.enqueue(object : Callback<WeatherResponse>{
                 override fun onResponse(
                     call: Call<WeatherResponse>,
                     response: Response<WeatherResponse>
                 ) {
+                    hideProgressDialog()
                     if(response.isSuccessful){
                         val weatherList: WeatherResponse? = response.body()
                         Log.i("API response success","${weatherList.toString()}")
@@ -117,6 +121,7 @@ class MainActivity : AppCompatActivity() {
                 }
 
                 override fun onFailure(call: Call<WeatherResponse>, t: Throwable) {
+                    hideProgressDialog()
                     Log.e("ON FAILURE",t.toString())
                 }
 
@@ -139,7 +144,6 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
-    // TODO (STEP 2: A alert dialog for denied permissions and if needed to allow it from the settings app info.)
     // START
     /**
      * A function used to show the alert dialog when the permissions are denied and need to allow it from settings app info.
@@ -166,7 +170,6 @@ class MainActivity : AppCompatActivity() {
     }
     // END
 
-    // TODO (STEP 5: Add a function to get the location of the device using the fusedLocationProviderClient.)
     // START
     /**
      * A function to request the current location. Using the fused location provider client.
@@ -195,6 +198,28 @@ class MainActivity : AppCompatActivity() {
             val longitude = mLastLocation.longitude
             Log.i("Current Longitude", "$longitude")
             getLocationWeatherDetails(latitude, longitude)
+        }
+    }
+    /**
+     * Method is used to show the Custom Progress Dialog.
+     */
+    private fun showCustomProgressDialog() {
+        mProgressDialog = Dialog(this)
+
+        /*Set the screen content from a layout resource.
+        The resource will be inflated, adding all top-level views to the screen.*/
+        mProgressDialog!!.setContentView(R.layout.dialog_custom_progress)
+
+        //Start the dialog and display it on screen.
+        mProgressDialog!!.show()
+    }
+
+    /**
+     * This function is used to dismiss the progress dialog if it is visible to user.
+     */
+    private fun hideProgressDialog() {
+        if (mProgressDialog != null) {
+            mProgressDialog!!.dismiss()
         }
     }
 
