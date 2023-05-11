@@ -1,4 +1,4 @@
-package com.example.weatherapp
+package com.example.weatherapp.activities
 
 import android.Manifest
 import android.annotation.SuppressLint
@@ -15,7 +15,8 @@ import android.provider.Settings
 import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
-import androidx.core.location.LocationManagerCompat.isLocationEnabled
+import com.example.weatherapp.utils.Constants
+import com.example.weatherapp.R
 import com.google.android.gms.location.*
 import com.karumi.dexter.Dexter
 import com.karumi.dexter.MultiplePermissionsReport
@@ -75,6 +76,26 @@ class MainActivity : AppCompatActivity() {
                 }).onSameThread()
                 .check()
 
+        }
+        getLocationWeatherDetails()
+    }
+
+    override fun onResume() {
+        super.onResume()
+     //   getLocationWeatherDetails()
+    }
+
+
+    override fun onContentChanged() {
+        super.onContentChanged()
+        getLocationWeatherDetails()
+    }
+
+    private fun getLocationWeatherDetails(){
+        if(Constants.isNetworkAvailable(this)){
+            Toast.makeText(this, "Connected", Toast.LENGTH_SHORT).show()
+        }else{
+            Toast.makeText(this, "Not connected", Toast.LENGTH_SHORT).show()
         }
     }
 

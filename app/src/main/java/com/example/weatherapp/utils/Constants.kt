@@ -1,9 +1,10 @@
-package com.example.weatherapp
+package com.example.weatherapp.utils
 
 import android.content.Context
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities
 import android.os.Build
+import androidx.annotation.RequiresApi
 
 object Constants {
 
